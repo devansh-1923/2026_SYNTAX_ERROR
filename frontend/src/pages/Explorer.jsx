@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import StarField from '../components/StarField.jsx'
-import { getPlanets } from "../services/api.js";
+import { getPlanets, getPlanetAnalysis } from "../services/api.js";
 
 const PAGE_STEP = 50
 
@@ -84,6 +84,25 @@ const retry = loadPlanets;
   const [query, setQuery] = useState('')
   const [visibleCount, setVisibleCount] = useState(PAGE_STEP)
   const [selected, setSelected] = useState(null)
+  const [analysis, setAnalysis] = useState(null)
+  const [analysisLoading, setAnalysisLoading] = useState(false)
+  const [analysisError, setAnalysisError] = useState(null)
+  const selectPlanet = async (planet) => {
+  setSelected(planet)
+  setAnalysis(null)
+  setAnalysisError(null)
+  setAnalysisLoading(true)
+
+  try {
+    const result = await getPlanetAnalysis(planet.pl_name)
+    setAnalysis(result.analysis)
+  } catch (err) {
+    console.error("Failed to load habitability analysis:", err)
+    setAnalysisError(err)
+  } finally {
+    setAnalysisLoading(false)
+  }
+}
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -206,7 +225,7 @@ const retry = loadPlanets;
                       )
                     }}
                   />
-                  <Scatter data={chartData} fill="#7fe0d4" fillOpacity={0.75} onClick={(p) => setSelected(p)} cursor="pointer" />
+                  <Scatter data={chartData} fill="#7fe0d4" fillOpacity={0.75} onClick={(p) => selectPlanet(p)} cursor="pointer" />
                 </ScatterChart>
               </ResponsiveContainer>
             </section>
@@ -232,7 +251,7 @@ const retry = loadPlanets;
                       <td>{fmt(p.pl_orbsmax, ' AU')}</td>
                       <td>{fmt(p.pl_eqt, ' K', 0)}</td>
                       <td>{fmt(p.st_teff, ' K', 0)}</td>
-                      <td><button className="view-btn" onClick={() => setSelected(p)}>View</button></td>
+                      <td><button className="view-btn" onClick={() => selectPlanet(p)}>View</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -287,7 +306,71 @@ const retry = loadPlanets;
                   </div>
                 </div>
 
-                <Flags p={selected} />
+                <Flags p={selected} /><Flags p={selected} />
+
+<div className="habitability-panel">
+  <h4>Habitability Potential</h4>
+
+  {analysisLoading && (
+    <p>Analyzing planetary conditions...</p>
+  )}
+
+  {analysisError && (
+    <p>
+      Unable to load habitability analysis.
+    </p>
+  )}
+
+  {analysis && (
+    <>
+      <div className="habitability-result">
+        <strong>{analysis.classification}</strong>
+
+        {analysis.score !== null && (
+          <span>
+            {analysis.score}% screening match
+          </span>
+        )}
+      </div>
+
+      <div className="habitability-counts">
+        <span>
+          ✓ {analysis.favorable_factors} Favorable
+        </span>
+
+        <span>
+          ⚠ {analysis.uncertain_factors} Unknown
+        </span>
+
+        <span>
+          ✕ {analysis.unfavorable_factors} Unfavorable
+        </span>
+      </div>
+
+      <div className="habitability-factors">
+        <h5>Why?</h5>
+
+        {analysis.factors?.map((factor) => (
+          <div key={factor.factor} className="factor">
+            <strong>{factor.factor}</strong>
+
+            <span>
+              {factor.value !== null && factor.value !== undefined
+                ? `${factor.value} ${factor.unit || ''}`
+                : 'N/A'}
+            </span>
+
+            <p>{factor.explanation}</p>
+          </div>
+        ))}
+      </div>
+
+      <p className="habitability-disclaimer">
+        {analysis.disclaimer}
+      </p>
+    </>
+  )}
+</div>
               </div>
             </div>
           )}
@@ -303,6 +386,71 @@ const retry = loadPlanets;
           padding: 1.1rem 6vw; background: rgba(3,4,8,0.8); backdrop-filter: blur(16px);
           border-bottom: 1px solid var(--border-faint);
         }
+          .habitability-panel {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border: 1px solid var(--border-faint);
+  background: var(--bg-panel);
+}
+
+.habitability-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.habitability-result strong {
+  font-size: 1.3rem;
+  color: var(--accent);
+}
+
+.habitability-result span {
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+
+.habitability-counts {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+  font-size: 0.85rem;
+}
+
+.habitability-factors {
+  margin-top: 1.5rem;
+}
+
+.factor {
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--border-faint);
+}
+
+.factor strong {
+  display: block;
+}
+
+.factor span {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+.factor p {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-top: 0.3rem;
+}
+
+.habitability-disclaimer {
+  margin-top: 1.2rem;
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
         .explorer__brand { display: flex; align-items: center; gap: 0.6rem; font-family: var(--font-display); font-weight: 600; letter-spacing: 0.16em; color: var(--text-primary); font-size: 1rem; }
         .explorer__brand-mark { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
         .explorer__navlinks { display: flex; gap: 2rem; font-size: 0.85rem; color: var(--text-secondary); }
@@ -380,7 +528,8 @@ const retry = loadPlanets;
         .flags__disclaimer { font-size: 0.78rem; line-height: 1.6; color: var(--text-tertiary); border-left: 2px solid var(--accent-dim); padding-left: 1rem; }
 
         @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
+      `}
+      </style>
     </div>
   )
 }
