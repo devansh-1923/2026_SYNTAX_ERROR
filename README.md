@@ -16,10 +16,39 @@ Habitax is a modern habit-tracking web application designed to help users build 
 
 ## 🛠️ Tech Stack
 
-* **HTML5**
-* **CSS3**
-* **JavaScript**
-* **Local Storage**
+**Frontend**
+- React.js
+- Vite
+- JavaScript
+- HTML5
+- CSS3
+
+**Backend**
+- Python
+- FastAPI
+- Uvicorn
+
+**External APIs**
+- NASA APIs
+
+**Development**
+- Git
+- GitHub
+- ESLint
+- Pytest
+
+## Application Flow
+User
+  ↓
+React Frontend
+  ↓
+FastAPI Backend
+  ↓
+NASA APIs
+  ↓
+Processed Data
+  ↓
+Interactive UI
 
 ## 🎯 Purpose
 
@@ -29,11 +58,8 @@ Habitax makes habit tracking simple, visual, and engaging. Instead of relying on
 
 Clone the repository:
 
-```bash
-git clone YOUR_REPOSITORY_URL
-```
-
-Open the project in VS Code and run `index.html` using Live Server.
+bash
+git clone https://github.com/devansh-1923/2026_SYNTAX_ERROR/tree/main
 
 ## 🔮 Future Improvements
 
