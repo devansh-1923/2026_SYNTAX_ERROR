@@ -77,7 +77,9 @@ useEffect(() => {
 
 const retry = loadPlanets;
 
-  const planets = useMemo(() => extractPlanetList(data), [data])
+ const planets = Array.isArray(data)
+  ? data
+  : data?.planets || data?.data || data?.results || [];
 
   const [query, setQuery] = useState('')
   const [visibleCount, setVisibleCount] = useState(PAGE_STEP)
